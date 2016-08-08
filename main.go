@@ -109,6 +109,8 @@ func main() {
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 	gl.PointSize(3.0)
 
+	window.SetCursorPosCallback(cursorPosCallback(10.0, 10.0))
+
 	for !window.ShouldClose() {
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -178,4 +180,13 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	}
 
 	return shader, nil
+}
+
+func cursorPosCallback(hAngle, vAngle float64) glfw.CursorPosCallback {
+	// var x, y float64
+	return func(w *glfw.Window, xpos float64, ypos float64) {
+		if glfw.Press == w.GetMouseButton(glfw.MouseButtonRight) {
+			fmt.Println(xpos, ypos)
+		}
+	}
 }
