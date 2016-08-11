@@ -8,25 +8,30 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 const windowWidth = 800
 const windowHeight = 600
 
 const vertexShaderSource = `
-#version 130
+#version 300 es
+
+uniform mat4 projection;
+uniform mat4 camera;
+uniform mat4 model;
 
 in vec4 position;
 
 void main() {
-	gl_Position = position;
+	gl_Position = model * position;
 }
 ` + "\x00"
 
 const fragmentShaderSource = `
-#version 130
+#version 300 es
 
-out vec4 outColor;
+out lowp vec4 outColor;
 
 void main()
 {
@@ -96,6 +101,18 @@ func main() {
 	}
 	gl.UseProgram(program)
 
+	projection := mgl32.Perspective(mgl32.DegToRad(90.0), float32(windowWidth)/windowHeight, -1.0, 10.0)
+	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+
+	camera := mgl32.LookAtV(mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
+	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
+
+	model := mgl32.Ident4()
+	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
+	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
 	posAttrib := uint32(gl.GetAttribLocation(program, gl.Str("position\x00")))
 	gl.EnableVertexAttribArray(posAttrib)
 	gl.VertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
@@ -109,11 +126,21 @@ func main() {
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 	gl.PointSize(3.0)
 
+	angle := 0.0
+
 	window.SetCursorPosCallback(cursorPosCallback(10.0, 10.0))
 
 	for !window.ShouldClose() {
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
+
+		// Render
+		gl.UseProgram(program)
+		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+		gl.BindVertexArray(vao)
 
 		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
 
