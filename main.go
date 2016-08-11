@@ -127,6 +127,7 @@ func main() {
 	gl.PointSize(3.0)
 
 	angle := 0.0
+	previousTime := glfw.GetTime()
 
 	window.SetCursorPosCallback(cursorPosCallback(10.0, 10.0))
 
@@ -134,6 +135,12 @@ func main() {
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+		// Update
+		time := glfw.GetTime()
+		elapsed := time - previousTime
+		previousTime = time
+
+		angle += elapsed
 		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
 
 		// Render
