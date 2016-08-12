@@ -21,10 +21,10 @@ uniform mat4 projection;
 uniform mat4 camera;
 uniform mat4 model;
 
-in vec4 position;
+in vec3 position;
 
 void main() {
-	gl_Position = model * position;
+	gl_Position = model * vec4(position, 1);
 }
 ` + "\x00"
 
@@ -68,13 +68,6 @@ func main() {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL version", version)
 
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-
 	X := 10
 	Y := 10
 	Z := 10
@@ -91,9 +84,6 @@ func main() {
 			}
 		}
 	}
-
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 
 	program, err := newProgram(vertexShaderSource, fragmentShaderSource)
 	if err != nil {
@@ -113,9 +103,19 @@ func main() {
 	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
 	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
+	var vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+
+	var vbo uint32
+	gl.GenBuffers(1, &vbo)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
+
 	posAttrib := uint32(gl.GetAttribLocation(program, gl.Str("position\x00")))
 	gl.EnableVertexAttribArray(posAttrib)
-	gl.VertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
 
 	colAttrib := uint32(gl.GetAttribLocation(program, gl.Str("color\x00")))
 	gl.EnableVertexAttribArray(colAttrib)
@@ -124,7 +124,7 @@ func main() {
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
-	gl.PointSize(3.0)
+	gl.PointSize(2.0)
 
 	angle := 0.0
 	previousTime := glfw.GetTime()
