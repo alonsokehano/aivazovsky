@@ -25,6 +25,7 @@ in vec3 position;
 
 void main() {
 	gl_Position = model * vec4(position, 1);
+  gl_PointSize = 2.0;
 }
 ` + "\x00"
 
@@ -122,9 +123,9 @@ func main() {
 	gl.VertexAttribPointer(colAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
 
 	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.VERTEX_PROGRAM_POINT_SIZE)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
-	gl.PointSize(2.0)
 
 	angle := 0.0
 	previousTime := glfw.GetTime()
