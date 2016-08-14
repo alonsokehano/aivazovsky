@@ -25,8 +25,9 @@ uniform mat4 model;
 in vec3 position;
 
 void main() {
+  vec4 cs_position = model * vec4(position, 1);
 	gl_Position = projection * camera * model * vec4(position, 1);
-  gl_PointSize = 1.0 * gl_Position.w;
+  gl_PointSize = 5.0 * (cs_position.z + 0.5);
 }
 ` + "\x00"
 
@@ -79,9 +80,9 @@ func main() {
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
-				vertices[index] = float32(block.neurons[i][j][k].x) / float32(X)
-				vertices[index+1] = float32(block.neurons[i][j][k].y) / float32(Y)
-				vertices[index+2] = float32(block.neurons[i][j][k].z) / float32(Z)
+				vertices[index] = float32(block.neurons[i][j][k].x)/float32(X) - 0.5
+				vertices[index+1] = float32(block.neurons[i][j][k].y)/float32(Y) - 0.5
+				vertices[index+2] = float32(block.neurons[i][j][k].z)/float32(Z) - 0.5
 				index += 3
 			}
 		}
