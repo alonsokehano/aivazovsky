@@ -24,8 +24,8 @@ uniform mat4 model;
 in vec3 position;
 
 void main() {
-	gl_Position = model * vec4(position, 1);
-  gl_PointSize = 2.0;
+	gl_Position = projection * camera * model * vec4(position, 1);
+  gl_PointSize = 1.0 * gl_Position.w;
 }
 ` + "\x00"
 
@@ -92,7 +92,7 @@ func main() {
 	}
 	gl.UseProgram(program)
 
-	projection := mgl32.Perspective(mgl32.DegToRad(90.0), float32(windowWidth)/windowHeight, -1.0, 10.0)
+	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
@@ -124,6 +124,7 @@ func main() {
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.Enable(gl.VERTEX_PROGRAM_POINT_SIZE)
+
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 
