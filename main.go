@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	// "math"
 	"runtime"
 	"strings"
 
@@ -78,9 +79,9 @@ func main() {
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
-				vertices[index] = float32(block.neurons[i][j][k].x) / 10
-				vertices[index+1] = float32(block.neurons[i][j][k].y) / 10
-				vertices[index+2] = float32(block.neurons[i][j][k].z) / 10
+				vertices[index] = float32(block.neurons[i][j][k].x) / float32(X)
+				vertices[index+1] = float32(block.neurons[i][j][k].y) / float32(Y)
+				vertices[index+2] = float32(block.neurons[i][j][k].z) / float32(Z)
 				index += 3
 			}
 		}
@@ -96,7 +97,7 @@ func main() {
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-	camera := mgl32.LookAtV(mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
 
@@ -128,22 +129,15 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 
-	angle := 0.0
-	previousTime := glfw.GetTime()
-
-	window.SetCursorPosCallback(cursorPosCallback(10.0, 10.0))
+	hAngle := 0.
+	vAngle := 0.
+	window.SetCursorPosCallback(cursorPosCallback(&hAngle, &vAngle))
 
 	for !window.ShouldClose() {
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// Update
-		time := glfw.GetTime()
-		elapsed := time - previousTime
-		previousTime = time
-
-		angle += elapsed
-		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
+		model = mgl32.HomogRotate3D(float32(hAngle), mgl32.Vec3{0, 1, 0})
 
 		// Render
 		gl.UseProgram(program)
@@ -218,11 +212,21 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-func cursorPosCallback(hAngle, vAngle float64) glfw.CursorPosCallback {
-	// var x, y float64
+func cursorPosCallback(hAngle, vAngle *float64) glfw.CursorPosCallback {
+	var x, y float64
+	rotate := false
 	return func(w *glfw.Window, xpos float64, ypos float64) {
 		if glfw.Press == w.GetMouseButton(glfw.MouseButtonRight) {
-			fmt.Println(xpos, ypos)
+			if rotate {
+				*hAngle = *hAngle + (xpos-x)/100
+				*vAngle = *vAngle + (ypos-y)/100
+			} else {
+				rotate = true
+			}
+			x = xpos
+			y = ypos
+		} else {
+			rotate = false
 		}
 	}
 }
