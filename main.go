@@ -138,7 +138,8 @@ func main() {
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		model = mgl32.HomogRotate3D(float32(hAngle), mgl32.Vec3{0, 1, 0})
+		// model = mgl32.HomogRotate3D(float32(hAngle), mgl32.Vec3{0, 1, 0})
+		model = mgl32.AnglesToQuat(float32(vAngle), float32(hAngle), 0, 1).Mat4()
 
 		// Render
 		gl.UseProgram(program)
