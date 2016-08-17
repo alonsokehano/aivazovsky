@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	// "math"
 	"runtime"
 	"strings"
 
@@ -132,18 +131,24 @@ func main() {
 
 	hAngle := 0.
 	vAngle := 0.
+	fov := 45.0
 	window.SetCursorPosCallback(cursorPosCallback(&hAngle, &vAngle))
+	window.SetScrollCallback(scrollCallback(&fov))
 
 	for !window.ShouldClose() {
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// model = mgl32.HomogRotate3D(float32(hAngle), mgl32.Vec3{0, 1, 0})
-		model = mgl32.AnglesToQuat(float32(vAngle), float32(hAngle), 0, 1).Mat4()
-
 		// Render
 		gl.UseProgram(program)
+
+		// Recalculate model matrix
+		model = mgl32.AnglesToQuat(float32(vAngle), float32(hAngle), 0, 1).Mat4()
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+		// Recalculate projection matrix
+		projection = mgl32.Perspective(mgl32.DegToRad(float32(fov)), float32(windowWidth)/windowHeight, 0.1, 10.0)
+		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
 		gl.BindVertexArray(vao)
 
@@ -230,5 +235,11 @@ func cursorPosCallback(hAngle, vAngle *float64) glfw.CursorPosCallback {
 		} else {
 			rotate = false
 		}
+	}
+}
+
+func scrollCallback(fov *float64) glfw.ScrollCallback {
+	return func(w *glfw.Window, xoffset float64, yoffset float64) {
+		*fov = *fov - yoffset
 	}
 }
