@@ -24,9 +24,8 @@ uniform mat4 model;
 in vec3 position;
 
 void main() {
-  vec4 cs_position = model * vec4(position, 1);
 	gl_Position = projection * camera * model * vec4(position, 1);
-  gl_PointSize = 5.0 * (cs_position.z + 0.5);
+  gl_PointSize = 10.0 - gl_Position.z;
 }
 ` + "\x00"
 
@@ -75,17 +74,7 @@ func main() {
 	Z := 10
 	block := Block{}.NewBlock(X, Y, Z)
 	vertices := make([]float32, X*Y*Z*3)
-	var index int
-	for i := 0; i < block.x; i++ {
-		for j := 0; j < block.y; j++ {
-			for k := 0; k < block.z; k++ {
-				vertices[index] = float32(block.neurons[i][j][k].x)/float32(X) - 0.5
-				vertices[index+1] = float32(block.neurons[i][j][k].y)/float32(Y) - 0.5
-				vertices[index+2] = float32(block.neurons[i][j][k].z)/float32(Z) - 0.5
-				index += 3
-			}
-		}
-	}
+	block.Render(vertices)
 
 	program, err := newProgram(vertexShaderSource, fragmentShaderSource)
 	if err != nil {
@@ -93,7 +82,7 @@ func main() {
 	}
 	gl.UseProgram(program)
 
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.01, 10.0)
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
@@ -129,11 +118,12 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 
-	hAngle := 0.
-	vAngle := 0.
-	fov := 45.0
-	window.SetCursorPosCallback(cursorPosCallback(&hAngle, &vAngle))
-	window.SetScrollCallback(scrollCallback(&fov))
+	window.SetCursorPosCallback(cursorPosCallback(&model, &camera, &projection))
+	window.SetScrollCallback(scrollCallback(&model, &camera, &projection))
+
+	translationMatrix := mgl32.Translate3D(-0.5, -0.5, -0.5)
+	scaleMatrix := mgl32.Scale3D(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
+	model = translationMatrix.Mul4(scaleMatrix)
 
 	for !window.ShouldClose() {
 
@@ -142,13 +132,8 @@ func main() {
 		// Render
 		gl.UseProgram(program)
 
-		// Recalculate model matrix
-		model = mgl32.AnglesToQuat(float32(vAngle), float32(hAngle), 0, 1).Mat4()
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-
-		// Recalculate projection matrix
-		projection = mgl32.Perspective(mgl32.DegToRad(float32(fov)), float32(windowWidth)/windowHeight, 0.1, 10.0)
-		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
 
 		gl.BindVertexArray(vao)
 
@@ -219,14 +204,16 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-func cursorPosCallback(hAngle, vAngle *float64) glfw.CursorPosCallback {
+func cursorPosCallback(model, camera, projection *mgl32.Mat4) glfw.CursorPosCallback {
 	var x, y float64
 	rotate := false
 	return func(w *glfw.Window, xpos float64, ypos float64) {
 		if glfw.Press == w.GetMouseButton(glfw.MouseButtonRight) {
 			if rotate {
-				*hAngle = *hAngle + (xpos-x)/100
-				*vAngle = *vAngle + (ypos-y)/100
+				rotation := mgl32.AnglesToQuat(
+					float32((ypos-y)/100),
+					float32((xpos-x)/100), 0, 1)
+				*model = rotation.Mat4().Mul4(*model)
 			} else {
 				rotate = true
 			}
@@ -238,8 +225,13 @@ func cursorPosCallback(hAngle, vAngle *float64) glfw.CursorPosCallback {
 	}
 }
 
-func scrollCallback(fov *float64) glfw.ScrollCallback {
+func scrollCallback(model, camera, projection *mgl32.Mat4) glfw.ScrollCallback {
+	zoom := 3.0
 	return func(w *glfw.Window, xoffset float64, yoffset float64) {
-		*fov = *fov - yoffset
+		zoom -= yoffset * 0.05
+		if zoom < 0 {
+			zoom = 0
+		}
+		*camera = mgl32.LookAtV(mgl32.Vec3{0, 0, float32(zoom)}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 	}
 }
