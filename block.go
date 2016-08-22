@@ -15,13 +15,13 @@ type Neuron struct {
 }
 
 func (n *Neuron) initialize(config BlockConfig) {
-	r := config.synapses_sens_radius
-	n.weights = make([][][]float32, r)
-	for i := 0; i < r; i++ {
-		n.weights[i] = make([][]float32, r)
-		for j := 0; j < r; j++ {
-			n.weights[i][j] = make([]float32, r)
-			for k := 0; k < r; k++ {
+	d := config.synapses_sens_radius*2 + 1
+	n.weights = make([][][]float32, d)
+	for i := 0; i < d; i++ {
+		n.weights[i] = make([][]float32, d)
+		for j := 0; j < d; j++ {
+			n.weights[i][j] = make([]float32, d)
+			for k := 0; k < d; k++ {
 				n.weights[i][j][k] = rand.Float32()
 			}
 		}
