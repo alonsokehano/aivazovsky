@@ -76,7 +76,8 @@ func main() {
 	X := 10
 	Y := 10
 	Z := 10
-	block := Block{}.NewBlock(X, Y, Z)
+	blockConfig := BlockConfig{synapses_sens_radius: 3}
+	block := Block{config: blockConfig}.NewBlock(X, Y, Z)
 	vertices := make([]float32, X*Y*Z*3)
 	block.Render(vertices)
 	colors := make([]float32, X*Y*Z*3)
