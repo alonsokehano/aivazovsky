@@ -79,9 +79,10 @@ func main() {
 	blockConfig := BlockConfig{synapses_sens_radius: 3}
 	block := Block{config: blockConfig}.NewBlock(X, Y, Z)
 	vertices := make([]float32, X*Y*Z*3)
-	block.Render(vertices)
+	block.Vertices(vertices)
 	block.CreatePattern(5, 5, 5, 2, 0.3)
 	colors := make([]float32, X*Y*Z*3)
+	block.Colors(colors)
 
 	program, err := newProgram(vertexShaderSource, fragmentShaderSource)
 	if err != nil {
