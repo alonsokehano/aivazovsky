@@ -22,21 +22,25 @@ uniform mat4 camera;
 uniform mat4 model;
 
 in vec3 position;
+in vec3 color;
+out vec3 fragmentColor;
 
 void main() {
 	gl_Position = projection * camera * model * vec4(position, 1);
   gl_PointSize = 10.0 - gl_Position.z;
+  fragmentColor = color;
 }
 ` + "\x00"
 
 const fragmentShaderSource = `
 #version 300 es
 
-out lowp vec4 outColor;
+in lowp vec3 fragmentColor;
+out lowp vec3 outColor;
 
 void main()
 {
-    outColor = vec4(1.0, 1.0, 1.0, 1.0);
+    outColor = fragmentColor;
 }
 ` + "\x00"
 
@@ -75,6 +79,7 @@ func main() {
 	block := Block{}.NewBlock(X, Y, Z)
 	vertices := make([]float32, X*Y*Z*3)
 	block.Render(vertices)
+	colors := make([]float32, X*Y*Z*3)
 
 	program, err := newProgram(vertexShaderSource, fragmentShaderSource)
 	if err != nil {
@@ -98,15 +103,19 @@ func main() {
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	var vertexbuffer uint32
+	gl.GenBuffers(1, &vertexbuffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vertexbuffer)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 
 	posAttrib := uint32(gl.GetAttribLocation(program, gl.Str("position\x00")))
 	gl.EnableVertexAttribArray(posAttrib)
 	gl.VertexAttribPointer(posAttrib, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+
+	var colorbuffer uint32
+	gl.GenBuffers(1, &colorbuffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, colorbuffer)
+	gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.STATIC_DRAW)
 
 	colAttrib := uint32(gl.GetAttribLocation(program, gl.Str("color\x00")))
 	gl.EnableVertexAttribArray(colAttrib)
