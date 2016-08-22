@@ -1,6 +1,8 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 type BlockConfig struct {
 	synapses_sens_radius int
@@ -47,7 +49,7 @@ func (b Block) NewBlock(x, y, z int) Block {
 	return Block{x: x, y: y, z: z, neurons: neurons}
 }
 
-func (b Block) Render(vertices []float32) {
+func (b *Block) Render(vertices []float32) {
 	var index int
 	for i := 0; i < b.x; i++ {
 		for j := 0; j < b.y; j++ {
@@ -58,5 +60,33 @@ func (b Block) Render(vertices []float32) {
 				index += 3
 			}
 		}
+	}
+}
+
+func (b *Block) CreatePattern(x, y, z, r int, probability float32) {
+	for i := maxInt(0, x-r); i < minInt(b.x, x+r); i++ {
+		for j := maxInt(0, y-r); j < minInt(b.y, y+r); j++ {
+			for k := maxInt(0, z-r); k < minInt(b.z, z+r); k++ {
+				if rand.Float32() <= probability {
+					b.neurons[i][j][k].value = 1.0
+				}
+			}
+		}
+	}
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	} else {
+		return b
 	}
 }
