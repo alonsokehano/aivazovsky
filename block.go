@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -9,9 +10,9 @@ type BlockConfig struct {
 }
 
 type Neuron struct {
-	x, y, z int
-	value   float32
-	weights [][][]float32
+	x, y, z         int
+	value, newvalue float32
+	weights         [][][]float32
 }
 
 func (n *Neuron) initialize(config BlockConfig) {
@@ -34,19 +35,18 @@ type Block struct {
 	config  BlockConfig
 }
 
-func (b Block) NewBlock(x, y, z int) Block {
-	neurons := make([][][]Neuron, x)
-	for i := 0; i < x; i++ {
-		neurons[i] = make([][]Neuron, y)
-		for j := 0; j < y; j++ {
-			neurons[i][j] = make([]Neuron, z)
-			for k := 0; k < z; k++ {
-				neurons[i][j][k] = Neuron{x: i, y: j, z: k}
-				neurons[i][j][k].initialize(b.config)
+func (b *Block) Initialize() {
+	b.neurons = make([][][]Neuron, b.x)
+	for i := 0; i < b.x; i++ {
+		b.neurons[i] = make([][]Neuron, b.y)
+		for j := 0; j < b.y; j++ {
+			b.neurons[i][j] = make([]Neuron, b.z)
+			for k := 0; k < b.z; k++ {
+				b.neurons[i][j][k] = Neuron{x: i, y: j, z: k}
+				b.neurons[i][j][k].initialize(b.config)
 			}
 		}
 	}
-	return Block{x: x, y: y, z: z, neurons: neurons}
 }
 
 func (b *Block) Vertices(vertices []float32) {
@@ -90,6 +90,51 @@ func (b *Block) CreatePattern(x, y, z, r int, probability float32) {
 				}
 			}
 		}
+	}
+}
+
+func (block *Block) Process() {
+	var sum float32
+	var posA, posB, posC int
+	r := block.config.synapses_sens_radius
+	d := block.config.synapses_sens_radius*2 + 1
+	for i := 0; i < block.x; i++ {
+		for j := 0; j < block.y; j++ {
+			for k := 0; k < block.z; k++ {
+				for a := 0; a < d; a++ {
+					posA = i - r + a
+					if posA >= 0 && posA < block.x && posA != i {
+						for b := 0; b < d; b++ {
+							posB = j - r + b
+							if posB >= 0 && posB < block.y && posB != j {
+								for c := 0; c < d; c++ {
+									posC = k - r + c
+									if posC >= 0 && posC < block.z && posC != k {
+										sum += block.neurons[i][j][k].weights[a][b][c] * block.neurons[posA][posB][posC].value
+									}
+								}
+							}
+						}
+					}
+				}
+				block.neurons[i][j][k].newvalue = sum
+			}
+		}
+	}
+
+	for i := 0; i < block.x; i++ {
+		for j := 0; j < block.y; j++ {
+			for k := 0; k < block.z; k++ {
+				block.neurons[i][j][k].value = block.neurons[i][j][k].newvalue
+			}
+		}
+	}
+}
+
+func (b *Block) Run() {
+	for i := 0; i < 100000; i++ {
+		fmt.Println("step", i)
+		b.Process()
 	}
 }
 

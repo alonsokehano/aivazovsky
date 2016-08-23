@@ -77,7 +77,8 @@ func main() {
 	Y := 10
 	Z := 10
 	blockConfig := BlockConfig{synapses_sens_radius: 2}
-	block := Block{config: blockConfig}.NewBlock(X, Y, Z)
+	block := Block{x: X, y: Y, z: Z, config: blockConfig}
+	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
 	block.Vertices(vertices)
 	block.CreatePattern(5, 5, 5, 2, 0.3)
@@ -136,6 +137,8 @@ func main() {
 	translationMatrix := mgl32.Translate3D(-0.5, -0.5, -0.5)
 	scaleMatrix := mgl32.Scale3D(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
 	model = translationMatrix.Mul4(scaleMatrix)
+
+	go block.Run()
 
 	for !window.ShouldClose() {
 
