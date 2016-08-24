@@ -148,22 +148,25 @@ func main() {
 			fmt.Println("tick")
 			block.Colors(colors)
 			gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.DYNAMIC_DRAW)
-		default:
+			// default:
 			// fmt.Println("    .")
 			// time.Sleep(50 * time.Millisecond)
 		}
 
+		/* Clear buffers */
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// Render
+		/* Choose rendering program */
 		gl.UseProgram(program)
 
 		/* Bind uniforms */
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
+		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-		gl.BindVertexArray(vao)
+		// gl.BindVertexArray(vao)
 
+		/* Draw points */
 		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
 
 		// Maintenance
