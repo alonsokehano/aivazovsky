@@ -6,27 +6,20 @@ import (
 )
 
 type BlockConfig struct {
+	/* Length of synapses */
 	synapses_sens_radius int
-}
 
-type Neuron struct {
-	x, y, z         int
-	value, newvalue float32
-	weights         [][][]float32
-}
+	/* Synaps activity when neuron became active (spiking) */
+	synapses_threshold float32
 
-func (n *Neuron) initialize(config BlockConfig) {
-	d := config.synapses_sens_radius*2 + 1
-	n.weights = make([][][]float32, d)
-	for i := 0; i < d; i++ {
-		n.weights[i] = make([][]float32, d)
-		for j := 0; j < d; j++ {
-			n.weights[i][j] = make([]float32, d)
-			for k := 0; k < d; k++ {
-				n.weights[i][j][k] = rand.Float32()
-			}
-		}
-	}
+	/* Speed of decreasing of internal neuron value while spiking */
+	spiking_speed float32
+
+	/* Speed of decreasing of internal neuron value while relaxing */
+	relaxation_speed float32
+
+	/* Condition (internal neuron value) when relaxation should ends */
+	relaxation_threshold float32
 }
 
 type Block struct {
@@ -43,12 +36,15 @@ func (b *Block) Initialize() {
 			b.neurons[i][j] = make([]Neuron, b.z)
 			for k := 0; k < b.z; k++ {
 				b.neurons[i][j][k] = Neuron{x: i, y: j, z: k}
-				b.neurons[i][j][k].initialize(b.config)
+				b.neurons[i][j][k].Initialize(b.config)
 			}
 		}
 	}
 }
 
+/*
+ Vertex rendering
+*/
 func (b *Block) Vertices(vertices []float32) {
 	var index int
 	for i := 0; i < b.x; i++ {
@@ -63,18 +59,27 @@ func (b *Block) Vertices(vertices []float32) {
 	}
 }
 
+/*
+ Colors rendering
+*/
 func (b *Block) Colors(colors []float32) {
 	var index int
 	for i := 0; i < b.x; i++ {
 		for j := 0; j < b.y; j++ {
 			for k := 0; k < b.z; k++ {
-				if b.neurons[i][j][k].value >= 1 {
+				if b.neurons[i][j][k].IsActive() {
 					colors[index] = 1.0
+					colors[index+1] = 0.0
+					colors[index+2] = 0.0
+				} else if (b.neurons[i][j][k]).IsRelaxing() {
+					colors[index] = 0.0
+					colors[index+1] = 0.0
+					colors[index+2] = 1.0
 				} else {
 					colors[index] = 0.0
+					colors[index+1] = 0.0
+					colors[index+2] = 0.0
 				}
-				colors[index+1] = 0.
-				colors[index+2] = 0.
 				index += 3
 			}
 		}
@@ -87,6 +92,7 @@ func (b *Block) CreatePattern(x, y, z, r int, probability float32) {
 			for k := maxInt(0, z-r); k < minInt(b.z, z+r); k++ {
 				if rand.Float32() <= probability {
 					b.neurons[i][j][k].value = 1.0
+					b.neurons[i][j][k].SetValue(b.config.synapses_threshold, b.config)
 				}
 			}
 		}
@@ -95,29 +101,55 @@ func (b *Block) CreatePattern(x, y, z, r int, probability float32) {
 
 func (block *Block) Process() {
 	var sum float32
+	var neuron Neuron
 	var posA, posB, posC int
 	r := block.config.synapses_sens_radius
 	d := block.config.synapses_sens_radius*2 + 1
+
+	/* Run through all neurons and calculate synapses activity */
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
-				for a := 0; a < d; a++ {
-					posA = i - r + a
-					if posA >= 0 && posA < block.x && posA != i {
-						for b := 0; b < d; b++ {
-							posB = j - r + b
-							if posB >= 0 && posB < block.y && posB != j {
-								for c := 0; c < d; c++ {
-									posC = k - r + c
-									if posC >= 0 && posC < block.z && posC != k {
-										sum += block.neurons[i][j][k].weights[a][b][c] * block.neurons[posA][posB][posC].value
+				neuron = block.neurons[i][j][k]
+
+				if neuron.IsIdle() {
+					/*
+					 If neuron is in 'idle' state, then calculate
+					 synaps activity and update his new value
+					*/
+					for a := 0; a < d; a++ {
+						posA = i - r + a
+						if posA >= 0 && posA < block.x && posA != i {
+							for b := 0; b < d; b++ {
+								posB = j - r + b
+								if posB >= 0 && posB < block.y && posB != j {
+									for c := 0; c < d; c++ {
+										posC = k - r + c
+										if posC >= 0 && posC < block.z && posC != k {
+											if block.neurons[posA][posB][posC].IsActive() {
+												sum += neuron.weights[a][b][c]
+											}
+										}
 									}
 								}
 							}
 						}
 					}
+					neuron.newvalue = sum
+					sum = 0
+				} else if neuron.IsActive() {
+					/*
+						In case if neuron is already in 'active' state
+						just decrement his new value
+					*/
+					neuron.newvalue -= block.config.spiking_speed
+				} else if neuron.IsRelaxing() {
+					/*
+						In case if neuron is in 'relaxing' state
+						just decrement his new value according to relaxation speed
+					*/
+					neuron.newvalue -= block.config.relaxation_speed
 				}
-				block.neurons[i][j][k].newvalue = sum
 			}
 		}
 	}
@@ -125,14 +157,14 @@ func (block *Block) Process() {
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
-				block.neurons[i][j][k].value = block.neurons[i][j][k].newvalue
+				block.neurons[i][j][k].SetValue(block.neurons[i][j][k].newvalue, block.config)
 			}
 		}
 	}
 }
 
 func (b *Block) Run(c chan int) {
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 30; i++ {
 		fmt.Println("step", i)
 		b.Process()
 		c <- i

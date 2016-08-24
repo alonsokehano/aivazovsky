@@ -76,7 +76,13 @@ func main() {
 	X := 10
 	Y := 10
 	Z := 10
-	blockConfig := BlockConfig{synapses_sens_radius: 2}
+	blockConfig := BlockConfig{
+		synapses_sens_radius: 2,
+		synapses_threshold:   50.0,
+		spiking_speed:        10.0,
+		relaxation_speed:     10.0,
+		relaxation_threshold: 10.0,
+	}
 	block := Block{x: X, y: Y, z: Z, config: blockConfig}
 	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
@@ -148,7 +154,7 @@ func main() {
 			fmt.Println("tick")
 			block.Colors(colors)
 			gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.DYNAMIC_DRAW)
-			// default:
+		default:
 			// fmt.Println("    .")
 			// time.Sleep(50 * time.Millisecond)
 		}
@@ -164,7 +170,7 @@ func main() {
 		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
 		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-		// gl.BindVertexArray(vao)
+		gl.BindVertexArray(vao)
 
 		/* Draw points */
 		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
