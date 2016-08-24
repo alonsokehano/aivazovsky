@@ -131,10 +131,11 @@ func (block *Block) Process() {
 	}
 }
 
-func (b *Block) Run() {
+func (b *Block) Run(c chan int) {
 	for i := 0; i < 100000; i++ {
 		fmt.Println("step", i)
 		b.Process()
+		c <- i
 	}
 }
 

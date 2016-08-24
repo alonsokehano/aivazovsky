@@ -119,7 +119,7 @@ func main() {
 	var colorbuffer uint32
 	gl.GenBuffers(1, &colorbuffer)
 	gl.BindBuffer(gl.ARRAY_BUFFER, colorbuffer)
-	gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.DYNAMIC_DRAW)
 
 	colAttrib := uint32(gl.GetAttribLocation(program, gl.Str("color\x00")))
 	gl.EnableVertexAttribArray(colAttrib)
@@ -138,15 +138,27 @@ func main() {
 	scaleMatrix := mgl32.Scale3D(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
 	model = translationMatrix.Mul4(scaleMatrix)
 
-	go block.Run()
+	ch := make(chan int)
+	go block.Run(ch)
 
 	for !window.ShouldClose() {
+
+		select {
+		case <-ch:
+			fmt.Println("tick")
+			block.Colors(colors)
+			gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.DYNAMIC_DRAW)
+		default:
+			// fmt.Println("    .")
+			// time.Sleep(50 * time.Millisecond)
+		}
 
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Render
 		gl.UseProgram(program)
 
+		/* Bind uniforms */
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
 
