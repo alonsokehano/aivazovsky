@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"github.com/alonsokehano/aivazovsky/gfx"
 	"github.com/alonsokehano/aivazovsky/window"
-	"log"
-	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
 func main() {
-
 	// GLFW window preferences
 	glfwWindow := window.GLFWWindow{
 		Width:  800,
@@ -22,7 +19,7 @@ func main() {
 
 	err := glfwWindow.Create()
 	if err != nil {
-		log.Fatalln("Failed to create GLFW window:", err)
+		panic(err)
 	}
 
 	w := glfwWindow.Window
@@ -45,7 +42,7 @@ func main() {
 	colors := make([]float32, X*Y*Z*3)
 	block.Colors(colors)
 
-	program, err := newProgram(gfx.VertexShader, gfx.FragmentShader)
+	program, err := gfx.CreateProgram()
 	if err != nil {
 		panic(err)
 	}
@@ -112,15 +109,10 @@ func main() {
 		/* Clear buffers */
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		/* Choose rendering program */
-		gl.UseProgram(program)
-
 		/* Bind uniforms */
 		gl.UniformMatrix4fv(projectionUniform, 1, false, view.ProjectionUniform())
 		gl.UniformMatrix4fv(cameraUniform, 1, false, view.CameraUniform())
 		gl.UniformMatrix4fv(modelUniform, 1, false, view.ModelUniform())
-
-		gl.BindVertexArray(vao)
 
 		/* Draw points */
 		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
@@ -130,39 +122,4 @@ func main() {
 
 		glfw.PollEvents()
 	}
-}
-
-func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
-	vertexShader, err := gfx.CompileShader(vertexShaderSource, gl.VERTEX_SHADER)
-	if err != nil {
-		return 0, err
-	}
-
-	fragmentShader, err := gfx.CompileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
-	if err != nil {
-		return 0, err
-	}
-
-	program := gl.CreateProgram()
-
-	gl.AttachShader(program, vertexShader)
-	gl.AttachShader(program, fragmentShader)
-	gl.LinkProgram(program)
-
-	var status int32
-	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to link program: %v", log)
-	}
-
-	gl.DeleteShader(vertexShader)
-	gl.DeleteShader(fragmentShader)
-
-	return program, nil
 }
