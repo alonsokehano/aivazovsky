@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/alonsokehano/aivazovsky/gfx"
 	"github.com/alonsokehano/aivazovsky/window"
 	"log"
 	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/go-gl/mathgl/mgl32"
 )
 
 const vertexShaderSource = `
@@ -55,7 +55,7 @@ func main() {
 		log.Fatalln("Failed to create GLFW window:", err)
 	}
 
-	window := glfwWindow.Window
+	w := glfwWindow.Window
 
 	X := 10
 	Y := 10
@@ -80,19 +80,6 @@ func main() {
 		panic(err)
 	}
 	gl.UseProgram(program)
-
-	aspectRatio := float32(glfwWindow.Width) / float32(glfwWindow.Height)
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), aspectRatio, 0.01, 10.0)
-	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
-
-	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
-	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
-
-	model := mgl32.Ident4()
-	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
 	var vao uint32
 	gl.GenVertexArrays(1, &vao)
@@ -122,17 +109,25 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 
-	window.SetCursorPosCallback(cursorPosCallback(&model, &camera, &projection))
-	window.SetScrollCallback(scrollCallback(&model, &camera, &projection))
+	view := gfx.CreateView(glfwWindow.Width, glfwWindow.Height)
+	view.Model.Scale(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
+	view.Model.Translate(-0.5, -0.5, -0.5)
 
-	translationMatrix := mgl32.Translate3D(-0.5, -0.5, -0.5)
-	scaleMatrix := mgl32.Scale3D(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
-	model = translationMatrix.Mul4(scaleMatrix)
+	w.SetCursorPosCallback(window.CursorPosCallback(&view))
+	w.SetScrollCallback(window.ScrollCallback(&view))
+
+	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
+	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
+
+	gl.UniformMatrix4fv(projectionUniform, 1, false, view.ProjectionUniform())
+	gl.UniformMatrix4fv(cameraUniform, 1, false, view.CameraUniform())
+	gl.UniformMatrix4fv(modelUniform, 1, false, view.ModelUniform())
 
 	ch := make(chan int)
 	go block.Run(ch)
 
-	for !window.ShouldClose() {
+	for !w.ShouldClose() {
 
 		select {
 		case <-ch:
@@ -151,9 +146,9 @@ func main() {
 		gl.UseProgram(program)
 
 		/* Bind uniforms */
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-		gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
-		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+		gl.UniformMatrix4fv(projectionUniform, 1, false, view.ProjectionUniform())
+		gl.UniformMatrix4fv(cameraUniform, 1, false, view.CameraUniform())
+		gl.UniformMatrix4fv(modelUniform, 1, false, view.ModelUniform())
 
 		gl.BindVertexArray(vao)
 
@@ -161,7 +156,7 @@ func main() {
 		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
 
 		// Maintenance
-		window.SwapBuffers()
+		w.SwapBuffers()
 
 		glfw.PollEvents()
 	}
@@ -223,36 +218,4 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	}
 
 	return shader, nil
-}
-
-func cursorPosCallback(model, camera, projection *mgl32.Mat4) glfw.CursorPosCallback {
-	var x, y float64
-	rotate := false
-	return func(w *glfw.Window, xpos float64, ypos float64) {
-		if glfw.Press == w.GetMouseButton(glfw.MouseButtonRight) {
-			if rotate {
-				rotation := mgl32.AnglesToQuat(
-					float32((ypos-y)/100),
-					float32((xpos-x)/100), 0, 1)
-				*model = rotation.Mat4().Mul4(*model)
-			} else {
-				rotate = true
-			}
-			x = xpos
-			y = ypos
-		} else {
-			rotate = false
-		}
-	}
-}
-
-func scrollCallback(model, camera, projection *mgl32.Mat4) glfw.ScrollCallback {
-	zoom := 3.0
-	return func(w *glfw.Window, xoffset float64, yoffset float64) {
-		zoom -= yoffset * 0.05
-		if zoom < 0 {
-			zoom = 0
-		}
-		*camera = mgl32.LookAtV(mgl32.Vec3{0, 0, float32(zoom)}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
-	}
 }
