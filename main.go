@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/alonsokehano/aivazovsky/window"
 	"log"
-	"runtime"
 	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
-
-const windowWidth = 800
-const windowHeight = 600
 
 const vertexShaderSource = `
 #version 300 es
@@ -44,34 +41,21 @@ void main()
 }
 ` + "\x00"
 
-func init() {
-	// GLFW event handling must run on the main OS thread
-	runtime.LockOSThread()
-}
-
 func main() {
-	if err := glfw.Init(); err != nil {
-		log.Fatalln("failed to initialize glfw:", err)
+
+	// GLFW window preferences
+	glfwWindow := window.GLFWWindow{
+		Width:  800,
+		Height: 600,
+		Title:  "Cube",
 	}
-	defer glfw.Terminate()
 
-	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 3)
-	glfw.WindowHint(glfw.ContextVersionMinor, 0)
-
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Cube", nil, nil)
+	err := glfwWindow.Create()
 	if err != nil {
-		panic(err)
-	}
-	window.MakeContextCurrent()
-
-	// Initialize Glow
-	if err := gl.Init(); err != nil {
-		panic(err)
+		log.Fatalln("Failed to create GLFW window:", err)
 	}
 
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	fmt.Println("OpenGL version", version)
+	window := glfwWindow.Window
 
 	X := 10
 	Y := 10
@@ -97,7 +81,8 @@ func main() {
 	}
 	gl.UseProgram(program)
 
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.01, 10.0)
+	aspectRatio := float32(glfwWindow.Width) / float32(glfwWindow.Height)
+	projection := mgl32.Perspective(mgl32.DegToRad(45.0), aspectRatio, 0.01, 10.0)
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
