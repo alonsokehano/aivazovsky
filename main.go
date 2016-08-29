@@ -82,6 +82,7 @@ func main() {
 
 	w.SetCursorPosCallback(window.CursorPosCallback(&view))
 	w.SetScrollCallback(window.ScrollCallback(&view))
+	w.SetKeyCallback(window.KeyCallback(&view))
 
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
