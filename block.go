@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 )
 
@@ -160,14 +159,6 @@ func (block *Block) Process() {
 				block.neurons[i][j][k].SetValue(block.neurons[i][j][k].newvalue, block.config)
 			}
 		}
-	}
-}
-
-func (b *Block) Run(c chan int) {
-	for i := 0; i < 30; i++ {
-		fmt.Println("step", i)
-		b.Process()
-		c <- i
 	}
 }
 

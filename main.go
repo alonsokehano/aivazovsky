@@ -42,6 +42,9 @@ func main() {
 	colors := make([]float32, X*Y*Z*3)
 	block.Colors(colors)
 
+	channel := make(chan string)
+	go run(&block, channel)
+
 	program, err := gfx.CreateProgram()
 	if err != nil {
 		panic(err)
@@ -76,44 +79,39 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 
-	view := gfx.CreateView(glfwWindow.Width, glfwWindow.Height)
-	view.Model.Scale(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
-	view.Model.Translate(-0.5, -0.5, -0.5)
+	glfwWindow.View.Model.Scale(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
+	glfwWindow.View.Model.Translate(-0.5, -0.5, -0.5)
 
-	w.SetCursorPosCallback(window.CursorPosCallback(&view))
-	w.SetScrollCallback(window.ScrollCallback(&view))
-	w.SetKeyCallback(window.KeyCallback(&view))
+	w.SetCursorPosCallback(window.CursorPosCallback(&glfwWindow))
+	w.SetScrollCallback(window.ScrollCallback(&glfwWindow))
+	w.SetKeyCallback(window.KeyCallback(&glfwWindow, channel))
 
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
 
-	gl.UniformMatrix4fv(projectionUniform, 1, false, view.ProjectionUniform())
-	gl.UniformMatrix4fv(cameraUniform, 1, false, view.CameraUniform())
-	gl.UniformMatrix4fv(modelUniform, 1, false, view.ModelUniform())
-
-	ch := make(chan int)
-	go block.Run(ch)
+	gl.UniformMatrix4fv(projectionUniform, 1, false, glfwWindow.View.ProjectionUniform())
+	gl.UniformMatrix4fv(cameraUniform, 1, false, glfwWindow.View.CameraUniform())
+	gl.UniformMatrix4fv(modelUniform, 1, false, glfwWindow.View.ModelUniform())
 
 	for !w.ShouldClose() {
 
 		select {
-		case <-ch:
+		case <-channel:
 			fmt.Println("tick")
 			block.Colors(colors)
 			gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.DYNAMIC_DRAW)
 		default:
-			// fmt.Println("    .")
-			// time.Sleep(50 * time.Millisecond)
+			// Nothing
 		}
 
 		/* Clear buffers */
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		/* Bind uniforms */
-		gl.UniformMatrix4fv(projectionUniform, 1, false, view.ProjectionUniform())
-		gl.UniformMatrix4fv(cameraUniform, 1, false, view.CameraUniform())
-		gl.UniformMatrix4fv(modelUniform, 1, false, view.ModelUniform())
+		gl.UniformMatrix4fv(projectionUniform, 1, false, glfwWindow.View.ProjectionUniform())
+		gl.UniformMatrix4fv(cameraUniform, 1, false, glfwWindow.View.CameraUniform())
+		gl.UniformMatrix4fv(modelUniform, 1, false, glfwWindow.View.ModelUniform())
 
 		/* Draw points */
 		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
@@ -122,5 +120,49 @@ func main() {
 		w.SwapBuffers()
 
 		glfw.PollEvents()
+	}
+}
+
+func run(block *Block, channel chan string) chan string {
+	processing := false
+	step := 0
+	for {
+		select {
+		case command := <-channel:
+			switch command {
+			case "toggle":
+				if processing {
+					fmt.Println("stop")
+					processing = false
+				} else {
+					fmt.Println("start")
+					processing = true
+					go func() {
+						for processing {
+							fmt.Println("step", step)
+							block.Process()
+							step += 1
+						}
+					}()
+				}
+			case "start":
+				fmt.Println("start")
+				processing = true
+				go func() {
+					for processing {
+						fmt.Println("step", step)
+						block.Process()
+						step += 1
+					}
+				}()
+			case "stop":
+				fmt.Println("stop")
+				processing = false
+			case "step":
+				fmt.Println("step", step)
+				block.Process()
+				step += 1
+			}
+		}
 	}
 }

@@ -2,6 +2,7 @@ package window
 
 import (
 	"fmt"
+	"github.com/alonsokehano/aivazovsky/gfx"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"runtime"
@@ -14,6 +15,7 @@ type GLFWWindow struct {
 	Title         string
 	Width, Height int
 	Window        *glfw.Window
+	View          gfx.View
 }
 
 func (w *GLFWWindow) Create() error {
@@ -50,6 +52,8 @@ func (w *GLFWWindow) Create() error {
 	// Print OpenGL version
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL version", version)
+
+	w.View = gfx.CreateView(w.Width, w.Height)
 
 	return nil
 }
