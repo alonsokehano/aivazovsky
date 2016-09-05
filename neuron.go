@@ -19,6 +19,7 @@ type Neuron struct {
 }
 
 func (n *Neuron) Initialize(config BlockConfig) {
+	r := config.synapses_sens_radius
 	d := config.synapses_sens_radius*2 + 1
 	n.weights = make([][][]float32, d)
 	for i := 0; i < d; i++ {
@@ -30,6 +31,8 @@ func (n *Neuron) Initialize(config BlockConfig) {
 			}
 		}
 	}
+	/* Self weight */
+	n.weights[r+1][r+1][r+1] = 0
 }
 
 func (n *Neuron) IsIdle() bool {
@@ -45,12 +48,12 @@ func (n *Neuron) IsRelaxing() bool {
 }
 
 func (n *Neuron) SetValue(value float32, config BlockConfig) {
-	n.value = value
 	if value >= config.synapses_threshold {
 		n.state = 1
-	} else if n.IsActive() && value >= config.relaxation_threshold {
-		n.state = 2
-	} else if n.IsRelaxing() && value <= config.relaxation_threshold {
+	} else if value <= config.relaxation_threshold {
 		n.state = 0
+	} else if n.IsActive() {
+		n.state = 2
 	}
+	n.value = value
 }

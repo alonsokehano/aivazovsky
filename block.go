@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -100,7 +101,7 @@ func (b *Block) CreatePattern(x, y, z, r int, probability float32) {
 
 func (block *Block) Process() {
 	var sum float32
-	var neuron Neuron
+	var neuron *Neuron
 	var posA, posB, posC int
 	r := block.config.synapses_sens_radius
 	d := block.config.synapses_sens_radius*2 + 1
@@ -109,7 +110,7 @@ func (block *Block) Process() {
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
-				neuron = block.neurons[i][j][k]
+				neuron = &block.neurons[i][j][k]
 
 				if neuron.IsIdle() {
 					/*
@@ -118,13 +119,13 @@ func (block *Block) Process() {
 					*/
 					for a := 0; a < d; a++ {
 						posA = i - r + a
-						if posA >= 0 && posA < block.x && posA != i {
+						if posA >= 0 && posA < block.x {
 							for b := 0; b < d; b++ {
 								posB = j - r + b
-								if posB >= 0 && posB < block.y && posB != j {
+								if posB >= 0 && posB < block.y {
 									for c := 0; c < d; c++ {
 										posC = k - r + c
-										if posC >= 0 && posC < block.z && posC != k {
+										if posC >= 0 && posC < block.z {
 											if block.neurons[posA][posB][posC].IsActive() {
 												sum += neuron.weights[a][b][c]
 											}
@@ -141,13 +142,14 @@ func (block *Block) Process() {
 						In case if neuron is already in 'active' state
 						just decrement his new value
 					*/
-					neuron.newvalue -= block.config.spiking_speed
+					neuron.newvalue = neuron.value - block.config.spiking_speed
+					fmt.Println("spiking", neuron.value)
 				} else if neuron.IsRelaxing() {
 					/*
 						In case if neuron is in 'relaxing' state
 						just decrement his new value according to relaxation speed
 					*/
-					neuron.newvalue -= block.config.relaxation_speed
+					neuron.newvalue = neuron.value - block.config.relaxation_speed
 				}
 			}
 		}
@@ -156,6 +158,7 @@ func (block *Block) Process() {
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
+				// fmt.Println(block.neurons[i][j][k].newvalue)
 				block.neurons[i][j][k].SetValue(block.neurons[i][j][k].newvalue, block.config)
 			}
 		}

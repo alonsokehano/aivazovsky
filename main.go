@@ -28,17 +28,17 @@ func main() {
 	Y := 10
 	Z := 10
 	blockConfig := BlockConfig{
-		synapses_sens_radius: 2,
-		synapses_threshold:   50.0,
-		spiking_speed:        10.0,
-		relaxation_speed:     10.0,
-		relaxation_threshold: 10.0,
+		synapses_sens_radius: 3,
+		synapses_threshold:   0.5,
+		spiking_speed:        1.1,
+		relaxation_speed:     0.01,
+		relaxation_threshold: 0.01,
 	}
 	block := Block{x: X, y: Y, z: Z, config: blockConfig}
 	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
 	block.Vertices(vertices)
-	block.CreatePattern(5, 5, 5, 2, 0.3)
+	block.CreatePattern(5, 5, 0, 2, 0.3)
 	colors := make([]float32, X*Y*Z*3)
 	block.Colors(colors)
 
@@ -123,7 +123,7 @@ func main() {
 	}
 }
 
-func run(block *Block, channel chan string) chan string {
+func run(block *Block, channel chan string) {
 	processing := false
 	step := 0
 	for {
@@ -140,6 +140,7 @@ func run(block *Block, channel chan string) chan string {
 					go func() {
 						for processing {
 							fmt.Println("step", step)
+							channel <- "tick"
 							block.Process()
 							step += 1
 						}
@@ -152,6 +153,7 @@ func run(block *Block, channel chan string) chan string {
 					for processing {
 						fmt.Println("step", step)
 						block.Process()
+						channel <- "tick"
 						step += 1
 					}
 				}()
@@ -161,6 +163,7 @@ func run(block *Block, channel chan string) chan string {
 			case "step":
 				fmt.Println("step", step)
 				block.Process()
+				channel <- "tick"
 				step += 1
 			}
 		}
