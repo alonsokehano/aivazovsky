@@ -38,12 +38,11 @@ func main() {
 	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
 	block.Vertices(vertices)
-	block.CreatePattern(5, 5, 0, 2, 0.3)
+	block.CreatePattern(5, 5, 5, 2, 0.3)
 	colors := make([]float32, X*Y*Z*3)
 	block.Colors(colors)
 
-	channel := make(chan string)
-	go run(&block, channel)
+	in, out := run(&block)
 
 	program, err := gfx.CreateProgram()
 	if err != nil {
@@ -84,7 +83,7 @@ func main() {
 
 	w.SetCursorPosCallback(window.CursorPosCallback(&glfwWindow))
 	w.SetScrollCallback(window.ScrollCallback(&glfwWindow))
-	w.SetKeyCallback(window.KeyCallback(&glfwWindow, channel))
+	w.SetKeyCallback(window.KeyCallback(&glfwWindow, in))
 
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
@@ -97,7 +96,7 @@ func main() {
 	for !w.ShouldClose() {
 
 		select {
-		case <-channel:
+		case <-out:
 			fmt.Println("tick")
 			block.Colors(colors)
 			gl.BufferData(gl.ARRAY_BUFFER, len(colors)*4, gl.Ptr(colors), gl.DYNAMIC_DRAW)
@@ -123,49 +122,49 @@ func main() {
 	}
 }
 
-func run(block *Block, channel chan string) {
-	processing := false
+func run(block *Block) (chan string, chan string) {
+	in := make(chan string)
+	out := make(chan string)
+	blockIn, blockOut := process(block)
 	step := 0
-	for {
-		select {
-		case command := <-channel:
-			switch command {
-			case "toggle":
-				if processing {
-					fmt.Println("stop")
-					processing = false
-				} else {
-					fmt.Println("start")
-					processing = true
-					go func() {
-						for processing {
-							fmt.Println("step", step)
-							channel <- "tick"
-							block.Process()
-							step += 1
-						}
-					}()
-				}
+	processing := false
+	loopFunc := func() {
+		blockIn <- step + 1
+		step = <-blockOut
+		out <- "tick"
+	}
+	go func() {
+		for {
+			switch <-in {
 			case "start":
-				fmt.Println("start")
 				processing = true
-				go func() {
-					for processing {
-						fmt.Println("step", step)
-						block.Process()
-						channel <- "tick"
-						step += 1
-					}
-				}()
 			case "stop":
-				fmt.Println("stop")
 				processing = false
 			case "step":
-				fmt.Println("step", step)
-				block.Process()
-				channel <- "tick"
-				step += 1
+				loopFunc()
+			case "toggle":
+				processing = !processing
 			}
+			go func() {
+				for processing {
+					loopFunc()
+				}
+			}()
 		}
-	}
+	}()
+	return in, out
+}
+
+func process(block *Block) (chan int, chan int) {
+	in := make(chan int)
+	out := make(chan int)
+	go func() {
+		for {
+			step := <-in
+			fmt.Println("step", step)
+			block.Process()
+			out <- step
+		}
+	}()
+	return in, out
 }

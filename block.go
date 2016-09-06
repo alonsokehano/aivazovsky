@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 )
 
@@ -143,7 +142,6 @@ func (block *Block) Process() {
 						just decrement his new value
 					*/
 					neuron.newvalue = neuron.value - block.config.spiking_speed
-					fmt.Println("spiking", neuron.value)
 				} else if neuron.IsRelaxing() {
 					/*
 						In case if neuron is in 'relaxing' state
