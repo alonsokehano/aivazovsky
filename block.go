@@ -34,8 +34,8 @@ func (b *Block) Initialize() {
 		for j := 0; j < b.y; j++ {
 			b.neurons[i][j] = make([]Neuron, b.z)
 			for k := 0; k < b.z; k++ {
-				b.neurons[i][j][k] = Neuron{x: i, y: j, z: k}
-				b.neurons[i][j][k].Initialize(b.config)
+				b.neurons[i][j][k] = Neuron{x: i, y: j, z: k, config: &b.config}
+				b.neurons[i][j][k].init()
 			}
 		}
 	}
@@ -66,11 +66,11 @@ func (b *Block) Colors(colors []float32) {
 	for i := 0; i < b.x; i++ {
 		for j := 0; j < b.y; j++ {
 			for k := 0; k < b.z; k++ {
-				if b.neurons[i][j][k].IsActive() {
+				if b.neurons[i][j][k].isActive() {
 					colors[index] = 1.0
 					colors[index+1] = 0.0
 					colors[index+2] = 0.0
-				} else if (b.neurons[i][j][k]).IsRelaxing() {
+				} else if (b.neurons[i][j][k]).isRelaxing() {
 					colors[index] = 0.0
 					colors[index+1] = 0.0
 					colors[index+2] = 1.0
@@ -90,8 +90,7 @@ func (b *Block) CreatePattern(x, y, z, r int, probability float32) {
 		for j := maxInt(0, y-r); j < minInt(b.y, y+r); j++ {
 			for k := maxInt(0, z-r); k < minInt(b.z, z+r); k++ {
 				if rand.Float32() <= probability {
-					b.neurons[i][j][k].value = 1.0
-					b.neurons[i][j][k].SetValue(b.config.synapses_threshold, b.config)
+					b.neurons[i][j][k].setValue(b.config.synapses_threshold)
 				}
 			}
 		}
@@ -111,7 +110,7 @@ func (block *Block) Process() {
 			for k := 0; k < block.z; k++ {
 				neuron = &block.neurons[i][j][k]
 
-				if neuron.IsIdle() {
+				if neuron.isIdle() {
 					/*
 					 If neuron is in 'idle' state, then calculate
 					 synaps activity and update his new value
@@ -125,7 +124,7 @@ func (block *Block) Process() {
 									for c := 0; c < d; c++ {
 										posC = k - r + c
 										if posC >= 0 && posC < block.z {
-											if block.neurons[posA][posB][posC].IsActive() {
+											if block.neurons[posA][posB][posC].isActive() {
 												sum += neuron.weights[a][b][c]
 											}
 										}
@@ -136,13 +135,13 @@ func (block *Block) Process() {
 					}
 					neuron.newvalue = sum
 					sum = 0
-				} else if neuron.IsActive() {
+				} else if neuron.isActive() {
 					/*
 						In case if neuron is already in 'active' state
 						just decrement his new value
 					*/
 					neuron.newvalue = neuron.value - block.config.spiking_speed
-				} else if neuron.IsRelaxing() {
+				} else if neuron.isRelaxing() {
 					/*
 						In case if neuron is in 'relaxing' state
 						just decrement his new value according to relaxation speed
@@ -156,8 +155,7 @@ func (block *Block) Process() {
 	for i := 0; i < block.x; i++ {
 		for j := 0; j < block.y; j++ {
 			for k := 0; k < block.z; k++ {
-				// fmt.Println(block.neurons[i][j][k].newvalue)
-				block.neurons[i][j][k].SetValue(block.neurons[i][j][k].newvalue, block.config)
+				block.neurons[i][j][k].setValue(block.neurons[i][j][k].newvalue)
 			}
 		}
 	}

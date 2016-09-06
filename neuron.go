@@ -16,11 +16,12 @@ type Neuron struct {
 	value, newvalue float32
 	weights         [][][]float32
 	state           int
+	config          *BlockConfig
 }
 
-func (n *Neuron) Initialize(config BlockConfig) {
-	r := config.synapses_sens_radius
-	d := config.synapses_sens_radius*2 + 1
+func (n *Neuron) init() {
+	r := n.config.synapses_sens_radius
+	d := n.config.synapses_sens_radius*2 + 1
 	n.weights = make([][][]float32, d)
 	for i := 0; i < d; i++ {
 		n.weights[i] = make([][]float32, d)
@@ -35,24 +36,24 @@ func (n *Neuron) Initialize(config BlockConfig) {
 	n.weights[r+1][r+1][r+1] = 0
 }
 
-func (n *Neuron) IsIdle() bool {
+func (n *Neuron) isIdle() bool {
 	return n.state == 0
 }
 
-func (n *Neuron) IsActive() bool {
+func (n *Neuron) isActive() bool {
 	return n.state == 1
 }
 
-func (n *Neuron) IsRelaxing() bool {
+func (n *Neuron) isRelaxing() bool {
 	return n.state == 2
 }
 
-func (n *Neuron) SetValue(value float32, config BlockConfig) {
-	if value >= config.synapses_threshold {
+func (n *Neuron) setValue(value float32) {
+	if value >= n.config.synapses_threshold {
 		n.state = 1
-	} else if value <= config.relaxation_threshold {
+	} else if value <= n.config.relaxation_threshold {
 		n.state = 0
-	} else if n.IsActive() {
+	} else if n.isActive() {
 		n.state = 2
 	}
 	n.value = value
