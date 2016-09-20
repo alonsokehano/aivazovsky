@@ -125,7 +125,7 @@ func (block *Block) Process() {
 										posC = k - r + c
 										if posC >= 0 && posC < block.z {
 											if block.neurons[posA][posB][posC].isActive() {
-												sum += neuron.weights[a][b][c]
+												sum++
 											}
 										}
 									}

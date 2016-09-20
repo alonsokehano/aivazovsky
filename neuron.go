@@ -1,8 +1,8 @@
 package main
 
-import (
-	"math/rand"
-)
+// import (
+// 	"math/rand"
+// )
 
 /*
 	Neuron states:
@@ -14,26 +14,26 @@ import (
 type Neuron struct {
 	x, y, z         int
 	value, newvalue float32
-	weights         [][][]float32
-	state           int
-	config          *BlockConfig
+	// weights         [][][]float32
+	state  int
+	config *BlockConfig
 }
 
 func (n *Neuron) init() {
-	r := n.config.synapses_sens_radius
-	d := n.config.synapses_sens_radius*2 + 1
-	n.weights = make([][][]float32, d)
-	for i := 0; i < d; i++ {
-		n.weights[i] = make([][]float32, d)
-		for j := 0; j < d; j++ {
-			n.weights[i][j] = make([]float32, d)
-			for k := 0; k < d; k++ {
-				n.weights[i][j][k] = rand.Float32()
-			}
-		}
-	}
-	/* Self weight */
-	n.weights[r+1][r+1][r+1] = 0
+	// r := n.config.synapses_sens_radius
+	// d := n.config.synapses_sens_radius*2 + 1
+	// n.weights = make([][][]float32, d)
+	// for i := 0; i < d; i++ {
+	// 	n.weights[i] = make([][]float32, d)
+	// 	for j := 0; j < d; j++ {
+	// 		n.weights[i][j] = make([]float32, d)
+	// 		for k := 0; k < d; k++ {
+	// 			n.weights[i][j][k] = rand.Float32()
+	// 		}
+	// 	}
+	// }
+	// /* Self weight */
+	// n.weights[r+1][r+1][r+1] = 0
 }
 
 func (n *Neuron) isIdle() bool {

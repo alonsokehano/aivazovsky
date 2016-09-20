@@ -24,21 +24,21 @@ func main() {
 
 	w := glfwWindow.Window
 
-	X := 10
-	Y := 10
-	Z := 10
+	X := 150
+	Y := 150
+	Z := 1
 	blockConfig := BlockConfig{
-		synapses_sens_radius: 3,
-		synapses_threshold:   0.5,
-		spiking_speed:        1.1,
-		relaxation_speed:     0.01,
-		relaxation_threshold: 0.01,
+		synapses_sens_radius: 15,
+		synapses_threshold:   1.0,
+		spiking_speed:        0.1,
+		relaxation_speed:     0.1,
+		relaxation_threshold: 0.1,
 	}
 	block := Block{x: X, y: Y, z: Z, config: blockConfig}
 	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
 	block.Vertices(vertices)
-	block.CreatePattern(5, 5, 5, 2, 0.3)
+	block.CreatePattern(75, 75, 0, 15, 0.03)
 	colors := make([]float32, X*Y*Z*3)
 	block.Colors(colors)
 
