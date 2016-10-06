@@ -38,7 +38,7 @@ func main() {
 	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
 	block.Vertices(vertices)
-	block.CreatePattern(75, 75, 0, 15, 0.03)
+	block.CreatePattern(75, 75, 0, 6, 0.1)
 	colors := make([]float32, X*Y*Z*3)
 	block.Colors(colors)
 
