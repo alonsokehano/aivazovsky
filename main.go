@@ -25,23 +25,12 @@ func main() {
 
 	w := glfwWindow.Window
 
-	X := 150
-	Y := 150
-	Z := 1
-
-	blockConfig := core.BlockConfig{
-		Synapses_sens_radius: 15,
-		Synapses_threshold:   1.0,
-		Spiking_speed:        0.1,
-		Relaxation_speed:     0.1,
-		Relaxation_threshold: 0.1,
-	}
-	block := core.Block{X: X, Y: Y, Z: Z, Config: blockConfig}
+	block := core.Block{}
 	block.Initialize()
-	vertices := make([]float32, X*Y*Z*3)
+	vertices := make([]float32, block.X*block.Y*block.Z*3)
 	block.Vertices(vertices)
 	block.CreatePattern(75, 75, 0, 6, 0.1)
-	colors := make([]float32, X*Y*Z*3)
+	colors := make([]float32, block.X*block.Y*block.Z*3)
 	block.Colors(colors)
 
 	in, out := run(&block)
@@ -115,7 +104,7 @@ func main() {
 		gl.UniformMatrix4fv(modelUniform, 1, false, glfwWindow.View.ModelUniform())
 
 		/* Draw points */
-		gl.DrawArrays(gl.POINTS, 0, int32(X*Y*Z))
+		gl.DrawArrays(gl.POINTS, 0, int32(block.X*block.Y*block.Z))
 
 		// Maintenance
 		w.SwapBuffers()

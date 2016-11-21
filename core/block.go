@@ -6,33 +6,35 @@ import (
 	"math/rand"
 )
 
-type BlockConfig struct {
-	/* Length of synapses */
-	Synapses_sens_radius int
+const X_C = 150
+const Y_C = 150
+const Z_C = 1
 
-	/* Synaps activity when neuron became active (spiking) */
-	Synapses_threshold float32
-
-	/* Speed of decreasing of internal neuron value while spiking */
-	Spiking_speed float32
-
-	/* Speed of decreasing of internal neuron value while relaxing */
-	Relaxation_speed float32
-
-	/* Condition (internal neuron value) when relaxation should ends */
-	Relaxation_threshold float32
-}
+const Synapses_sens_radius = 15
+const Synapses_threshold = 1.0
+const Spiking_speed = 0.1
+const Relaxation_speed = 0.1
+const Relaxation_threshold = 0.1
 
 type Block struct {
 	X, Y, Z int
 	Neurons [][][]Neuron
-	Config  BlockConfig
 }
 
 func (b *Block) Initialize() {
-	b.New(func(i, j, k int) Neuron {
-		return Neuron{}
-	})
+	b.X = X_C
+	b.Y = Y_C
+	b.Z = Z_C
+	b.Neurons = make([][][]Neuron, b.X)
+	for i := 0; i < b.X; i++ {
+		b.Neurons[i] = make([][]Neuron, b.Y)
+		for j := 0; j < b.Y; j++ {
+			b.Neurons[i][j] = make([]Neuron, b.Z)
+			for k := 0; k < b.Z; k++ {
+				b.Neurons[i][j][k] = Neuron{}
+			}
+		}
+	}
 }
 
 /*
@@ -95,8 +97,8 @@ func (block *Block) Process() {
 	var neuron *Neuron
 	var posA, posB, posC int
 	var dx, dy, sigma float64
-	r := block.Config.Synapses_sens_radius
-	d := block.Config.Synapses_sens_radius*2 + 1
+	r := Synapses_sens_radius
+	d := Synapses_sens_radius*2 + 1
 
 	var s float32
 
@@ -201,20 +203,6 @@ func maxInt(a, b int) int {
 }
 
 /* Matrix */
-
-func (b *Block) New(f func(a, b, c int) Neuron) *Block {
-	b.Neurons = make([][][]Neuron, b.X)
-	for i := 0; i < b.X; i++ {
-		b.Neurons[i] = make([][]Neuron, b.Y)
-		for j := 0; j < b.Y; j++ {
-			b.Neurons[i][j] = make([]Neuron, b.Z)
-			for k := 0; k < b.Z; k++ {
-				b.Neurons[i][j][k] = f(i, j, k)
-			}
-		}
-	}
-	return b
-}
 
 func (b *Block) Each(f func(a, b, c int, value Neuron)) *Block {
 	for i := 0; i < b.X; i++ {
