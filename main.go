@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// GLFW window preferences
-	glfwWindow := window.GLFWWindow{
+	glfwWindow := window.Window{
 		Width:  800,
 		Height: 600,
 		Title:  "Cube",

@@ -11,14 +11,14 @@ import (
 const VERSION_MAJOR = 3
 const VERSION_MINOR = 0
 
-type GLFWWindow struct {
+type Window struct {
 	Title         string
 	Width, Height int
 	Window        *glfw.Window
 	View          gfx.View
 }
 
-func (w *GLFWWindow) Create() error {
+func (w *Window) Create() error {
 	if err := glfw.Init(); err != nil {
 		return err
 	}
