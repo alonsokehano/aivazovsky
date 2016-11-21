@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/alonsokehano/aivazovsky/core"
 	"github.com/alonsokehano/aivazovsky/gfx"
 	"github.com/alonsokehano/aivazovsky/window"
 
@@ -27,14 +28,15 @@ func main() {
 	X := 150
 	Y := 150
 	Z := 1
-	blockConfig := BlockConfig{
-		synapses_sens_radius: 15,
-		synapses_threshold:   1.0,
-		spiking_speed:        0.1,
-		relaxation_speed:     0.1,
-		relaxation_threshold: 0.1,
+
+	blockConfig := core.BlockConfig{
+		Synapses_sens_radius: 15,
+		Synapses_threshold:   1.0,
+		Spiking_speed:        0.1,
+		Relaxation_speed:     0.1,
+		Relaxation_threshold: 0.1,
 	}
-	block := Block{x: X, y: Y, z: Z, config: blockConfig}
+	block := core.Block{X: X, Y: Y, Z: Z, Config: blockConfig}
 	block.Initialize()
 	vertices := make([]float32, X*Y*Z*3)
 	block.Vertices(vertices)
@@ -78,7 +80,7 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.226, 0.226, 0.226, 1.0)
 
-	glfwWindow.View.Model.Scale(1/float32(block.x), 1/float32(block.y), 1/float32(block.z))
+	glfwWindow.View.Model.Scale(1/float32(block.X), 1/float32(block.Y), 1/float32(block.Z))
 	glfwWindow.View.Model.Translate(-0.5, -0.5, -0.5)
 
 	w.SetCursorPosCallback(window.CursorPosCallback(&glfwWindow))
@@ -122,7 +124,7 @@ func main() {
 	}
 }
 
-func run(block *Block) (chan string, chan string) {
+func run(block *core.Block) (chan string, chan string) {
 	in := make(chan string)
 	out := make(chan string)
 	blockIn, blockOut := process(block)
@@ -155,7 +157,7 @@ func run(block *Block) (chan string, chan string) {
 	return in, out
 }
 
-func process(block *Block) (chan int, chan int) {
+func process(block *core.Block) (chan int, chan int) {
 	in := make(chan int)
 	out := make(chan int)
 	go func() {
