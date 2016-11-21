@@ -25,11 +25,12 @@ func main() {
 
 	w := glfwWindow.Window
 
+	core.Initialize()
+
 	block := core.Block{}
 	block.Initialize()
 	vertices := make([]float32, block.X*block.Y*block.Z*3)
 	block.Vertices(vertices)
-	block.CreatePattern(75, 75, 0, 6, 0.1)
 	colors := make([]float32, block.X*block.Y*block.Z*3)
 	block.Colors(colors)
 
