@@ -4,13 +4,13 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
-func ScrollCallback(window *GLFWWindow) glfw.ScrollCallback {
+func ScrollCallback(window *Window) glfw.ScrollCallback {
 	return func(w *glfw.Window, xoffset float64, yoffset float64) {
 		window.View.Camera.ZoomOut(-float32(yoffset) * 0.05)
 	}
 }
 
-func CursorPosCallback(window *GLFWWindow) glfw.CursorPosCallback {
+func CursorPosCallback(window *Window) glfw.CursorPosCallback {
 	var x, y float64
 	rotate := false
 	return func(w *glfw.Window, xpos float64, ypos float64) {
