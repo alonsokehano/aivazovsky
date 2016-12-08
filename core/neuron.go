@@ -16,6 +16,7 @@ type Neuron struct {
 	Status   int
 	Activity float32
 	Relax    float32
+	Value    float32
 	// value, newvalue float32
 	// weights         [][][]float32
 	// config *BlockConfig
